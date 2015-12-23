@@ -1,46 +1,44 @@
 package xmas.puzzle10
 
-import kotlin.jvm.internal.iterator
-
 /**
  * @author Damian Wieczorek {@literal <damian@farmlogs.com>}
  * @since 12/22/15
  * (C) 2015 Damian Wieczorek
  */
-val INPUT = "113333222113"
+fun String.droppingFirstGroup() = firstOrNull()?.let { first ->
+  dropWhile { it == first }
+} ?: this
 
-data class CountedValue<T>(val value: T, val count: Int)
-
-class AppendingIterator<T>(val first: T, val rest: Iterator<T>): Iterator<T> {
-  private var takenFirst = false
-  override fun hasNext() = if (!takenFirst) true else rest.hasNext()
-  override fun next() = if (!takenFirst) first.apply { takenFirst = true } else rest.next()
+fun String.lookAndSay(): String = StringBuilder().let {
+  this.lookAndSay(it)
+  it.toString()
 }
 
-inline fun <T> Iterator<T>.countWhile(predicate: (T) -> Boolean): Int {
-  var count = 0
-  for (element in this) {
-    if (!predicate(element)) break
-    count += 1
-  }
-  return count
-}
-
-fun <T> Iterator<T>.countWhileEqual(): Pair<CountedValue<T>, Iterator<T>>? {
-  val initial = if (hasNext()) next() else return null
-  var previous = initial
-  val count = countWhile { (it == previous).apply { previous = it } } + 1
-  val nextIterator = if (previous != initial) AppendingIterator(previous, this) else this
-  return Pair(CountedValue(initial, count), nextIterator)
-}
-
-fun <T> Iterator<T>.toCountingSequence(): Sequence<CountedValue<T>> =
-    sequence(countWhileEqual()) { it.second.countWhileEqual() }.map { it.first }
-
-fun String.lookAndSay() = iterator().toCountingSequence().map { "${it.count}${it.value}" }.joinToString("").apply {
-  println(this)
+tailrec fun String.lookAndSay(stringBuilder: StringBuilder) {
+  if (isEmpty()) return
+  val tail = droppingFirstGroup()
+  stringBuilder.append(length - tail.length)
+  stringBuilder.append(first())
+  tail.lookAndSay(stringBuilder)
 }
 
 fun String.lookAndSay(iterations: Int) = sequence(lookAndSay()) { it.lookAndSay() }.take(iterations).last()
 
-println(INPUT.lookAndSay(40))
+val INPUT = "1113222113"
+
+inline fun time(block: () -> Unit) {
+  println("--> Begin")
+  val startTime = System.currentTimeMillis()
+  block()
+  val endTime = System.currentTimeMillis()
+  val duration = endTime - startTime
+  println("--> Time: $duration ms")
+}
+
+time {
+  println("Part 1: ${INPUT.lookAndSay(40).length}")
+}
+
+time {
+  println("Part 2: ${INPUT.lookAndSay(50).length}")
+}
